@@ -28,61 +28,67 @@ app.get('/diag/ip', async (req, res) => {
     }
 });
 
-// L'endpoint pour obtenir les informations d'un joueur
-// Exemple d'appel : /player?tag=%23L9YJLP22
-app.get('/player', async (req, res) => {
-    const playerTag = req.query.tag;
-
+// Helper function to fetch player data from Supercell API
+async function fetchPlayerData(playerTag, gameType, apiBaseUrl, res) {
     if (!playerTag) {
         return res.status(400).json({ error: 'Player tag is required.' });
     }
 
     if (!SUPERCELL_API_KEY) {
-        // Cette erreur ne devrait jamais se produire en production si le .env est configuré
         console.error("API Key is missing.");
         return res.status(500).json({ error: 'Internal server error: API key missing.' });
     }
 
     // Check cache first
-    const cacheKey = `player_${playerTag}`;
+    const cacheKey = `${gameType}_player_${playerTag}`;
     const cachedData = cache.get(cacheKey);
     
     if (cachedData) {
-        console.log(`Cache hit for player: ${playerTag}`);
+        console.log(`Cache hit for ${gameType} player: ${playerTag}`);
         return res.json(cachedData);
     }
 
     // Le tag du joueur doit être encodé (par exemple, #XXXXXX devient %23XXXXXX)
     const encodedTag = encodeURIComponent(playerTag);
-    const apiUrl = `https://api.clashofclans.com/v1/players/${encodedTag}`;
+    const apiUrl = `${apiBaseUrl}/v1/players/${encodedTag}`;
 
     try {
         const response = await axios.get(apiUrl, {
             headers: {
-                // Utilisation de la clé API sécurisée
                 'Authorization': `Bearer ${SUPERCELL_API_KEY}`
             }
         });
 
         // Store in cache
         cache.set(cacheKey, response.data);
-        console.log(`Cache miss - stored player data for: ${playerTag}`);
+        console.log(`Cache miss - stored ${gameType} player data for: ${playerTag}`);
 
         // Renvoie les données du joueur à l'application cliente
         res.json(response.data);
     } catch (error) {
-        console.error('Error fetching data from Supercell API:', error.response ? error.response.data : error.message);
-        // Renvoie l'erreur de l'API Supercell à l'application cliente
+        console.error(`Error fetching data from ${gameType} API:`, error.response ? error.response.data : error.message);
         res.status(error.response?.status || 500).json({
-            error: 'Failed to fetch player data from Supercell.',
+            error: `Failed to fetch ${gameType} player data.`,
             details: error.response?.data || error.message
         });
     }
+}
+
+// L'endpoint pour obtenir les informations d'un joueur Clash of Clans
+// Exemple d'appel : /player?tag=%23L9YJLP22
+app.get('/player', async (req, res) => {
+    await fetchPlayerData(req.query.tag, 'CoC', 'https://api.clashofclans.com', res);
+});
+
+// L'endpoint pour obtenir les informations d'un joueur Clash Royale
+// Exemple d'appel : /clashroyale/player?tag=%23L9YJLP22
+app.get('/clashroyale/player', async (req, res) => {
+    await fetchPlayerData(req.query.tag, 'Clash Royale', 'https://api.clashroyale.com', res);
 });
 
 // Endpoint de base pour vérifier que le serveur est actif
 app.get('/', (req, res) => {
-    res.send('Clash API Backend is running.');
+    res.send('StatsGames API Backend is running. Supports Clash of Clans and Clash Royale APIs.');
 });
 
 // Pour le développement local :

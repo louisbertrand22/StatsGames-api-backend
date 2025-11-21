@@ -1,1 +1,16 @@
-﻿
+﻿{
+  "version": 2,
+  "functions": [
+    {
+      "src": "clash-api-backend/index.js",
+      "runtime": "nodejs18.x"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "clash-api-backend/index.js"
+    }
+  ],
+  "installCommand": "npm install --prefix clash-api-backend"
+}

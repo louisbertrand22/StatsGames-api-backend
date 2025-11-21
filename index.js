@@ -14,6 +14,16 @@ app.use(express.json());
 // Clé API stockée de manière sécurisée dans un fichier .env (environnement du serveur)
 const SUPERCELL_API_KEY = process.env.SUPERCELL_API_KEY;
 
+app.get('/diag/ip', async (req, res) => {
+    try {
+        // Utilise un service externe pour trouver l'adresse IP publique du serveur Vercel
+        const response = await axios.get('https://api.ipify.org?format=json');
+        res.json({ outbound_ip: response.data.ip, message: 'Add this IP to the Supercell developer portal.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Could not fetch IP address.' });
+    }
+});
+
 // L'endpoint pour obtenir les informations d'un joueur
 // Exemple d'appel : /player?tag=%23L9YJLP22
 app.get('/player', async (req, res) => {

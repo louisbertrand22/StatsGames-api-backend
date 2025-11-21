@@ -2,10 +2,14 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const NodeCache = require('node-cache');
 require('dotenv').config(); // Pour charger les variables d'environnement
 
 const app = express();
 const port = 3000;
+
+// Initialize cache with TTL of 300 seconds (5 minutes) and check period of 60 seconds
+const cache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 // Middleware pour permettre à votre application React Native d'accéder à ce serveur
 app.use(cors());
@@ -39,6 +43,15 @@ app.get('/player', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error: API key missing.' });
     }
 
+    // Check cache first
+    const cacheKey = `player_${playerTag}`;
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+        console.log(`Cache hit for player: ${playerTag}`);
+        return res.json(cachedData);
+    }
+
     // Le tag du joueur doit être encodé (par exemple, #XXXXXX devient %23XXXXXX)
     const encodedTag = encodeURIComponent(playerTag);
     const apiUrl = `https://api.clashofclans.com/v1/players/${encodedTag}`;
@@ -50,6 +63,10 @@ app.get('/player', async (req, res) => {
                 'Authorization': `Bearer ${SUPERCELL_API_KEY}`
             }
         });
+
+        // Store in cache
+        cache.set(cacheKey, response.data);
+        console.log(`Cache miss - stored player data for: ${playerTag}`);
 
         // Renvoie les données du joueur à l'application cliente
         res.json(response.data);

@@ -1,16 +1,24 @@
 ﻿{
   "version": 2,
-  "functions": [
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "builds": [
     {
-      "src": "clash-api-backend/index.js",
-      "runtime": "nodejs18.x"
+      "src": "index.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "memory": 1024
+      }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "clash-api-backend/index.js"
+      "dest": "/index.js"
     }
-  ],
-  "installCommand": "npm install --prefix clash-api-backend"
+  ]
 }

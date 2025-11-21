@@ -1,0 +1,16 @@
+﻿{
+  "version": 2,
+  "functions": [
+    {
+      "src": "index.js",
+      "dest": "/",
+      "runtime": "nodejs18.x"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.js"
+    }
+  ]
+}
